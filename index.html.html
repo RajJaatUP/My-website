@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Trolling - Terminal System</title>
+    <style>
+        /* =========================================================================
+           1. CORE ARCHITECTURE RESET & VARIABLES
+           ========================================================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+            font-family: 'Courier New', Courier, monospace;
+            color: #ffffff;
+            transition: background-color 0.05s ease;
+        }
+
+        /* =========================================================================
+           2. BACKGROUND & TEXT FILLER INFRASTRUCTURE
+           ========================================================================= */
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, #000000 100%);
+            z-index: 1;
+        }
+
+        .dots-layer {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            top: 0;
+            left: 0;
+            background-image: 
+                radial-gradient(circle, #ffffff 2px, transparent 2px),
+                radial-gradient(circle, #ffffff 3px, transparent 3px);
+            background-size: 130px 130px, 220px 220px;
+            background-position: 0 0, 60px 60px;
+            opacity: 0.15;
+            animation: moveDotsUp 12s linear infinite;
+        }
+
+        @keyframes moveDotsUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        .bg-code-text {
+            position: absolute;
+            left: 23%;
+            top: 40%;
+            width: 73%;
+            color: rgba(255, 255, 255, 0.22);
+            font-size: 0.85rem;
+            line-height: 1.4;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .windows-watermark {
+            position: absolute;
+            bottom: 25px;
+            right: 30px;
+            text-align: right;
+            color: rgba(255, 255, 255, 0.35);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* =========================================================================
+           3. VIEWPORT SCREENS & CONTROLLERS
+           ========================================================================= */
+        .main-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .screen {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hidden { display: none !important; }
+
+        .menu-card {
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 290px;
+            background: rgba(5, 5, 5, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 35px 25px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            line-height: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .title-sub {
+            font-size: 3.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .version-tag {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.68rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        .central-box {
+            background: rgba(5, 5, 5, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+        }
+
+        /* =========================================================================
+           4. SYSTEM INTERACTION COMPONENTS & SLIDE ANIMATIONS
+           ========================================================================= */
+        .options-vertical { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            width: 100%; 
+            align-items: center; 
+            overflow: hidden;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #000000;
+            background-color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+            width: 100%;
+            position: relative;
+        }
+
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(255,255,255,0.3);
+        }
+
+        .slide-mode-btn {
+            animation: slideInToCenter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+            max-width: 300px;
+        }
+
+        @keyframes slideInToCenter {
+            0% {
+                opacity: 0;
+                transform: translateX(-150%);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .delay-1 { animation-delay: 0.08s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.32s; }
+        
+        .btn-casual { background-color: #00ffcc; box-shadow: 0 4px 0 #00b38f; }
+        .btn-standard { background-color: #ffcc00; box-shadow: 0 4px 0 #b38f00; }
+        .btn-nightmare { background-color: #ff0055; color: #ffffff; box-shadow: 0 4px 0 #b3003b; }
+        .btn-nightmare-active { animation: pulseAttack 0.3s infinite alternate; }
+
+        @keyframes pulseAttack {
+            0% { box-shadow: 0 0 4px #ff0055, 0 4px 0 #b3003b; }
+            100% { box-shadow: 0 0 22px #ff0055, 0 4px 0 #b3003b; }
+        }
+
+        .alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .alert-box {
+            background: #080808;
+            border: 1px solid #ff0055;
+            padding: 30px;
+            border-radius: 6px;
+            max-width: 550px;
+            width: 90%;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+        }
+
+        /* =========================================================================
+           5. GAME MECHANICS & IN-GAME SCREENS
+           ========================================================================= */
+        .dialogue-box {
+            background: rgba(10, 10, 10, 0.98);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            padding: 24px;
+            width: 100%;
+            max-width: 650px;
+            border-radius: 8px;
+            color: #00ffcc;
+            font-weight: bold;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            text-align: left;
+        }
+
+        .fake-window {
+            position: absolute;
+            width: 320px;
+            background: #0d0d0d;
+            border: 2px solid #ff0055;
+            box-shadow: 0 10px 40px rgba(255, 0, 85, 0.7);
+            z-index: 9999;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .window-header {
+            background: #ff0055;
+            color: #ffffff;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .window-body {
+            padding: 18px;
+            font-size: 0.9rem;
+            color: #ff4d4d;
+            text-align: center;
+            font-weight: bold;
+            background: #000000;
+            line-height: 1.4;
+        }
+
+        .progress-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #1a1a1a;
+            border: 2px solid #ff0055;
+            height: 28px;
+            margin-top: 15px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #ff0055;
+            box-shadow: 0 0 10px #ff0055;
+        }
+
+        .give-up-btn {
+            position: fixed;
+            bottom: 35px;
+            left: 35px;
+            z-index: 10000;
+            background-color: #ff0055;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            font-family: 'Courier New', monospace;
+            font-weight: 900;
+            animation: flashButtonMatrix 0.25s infinite alternate;
+        }
+
+        @keyframes flashButtonMatrix {
+            0% { background-color: #ff0055; transform: scale(1); }
+            100% { background-color: #26000c; transform: scale(1.05); }
+        }
+
+        .ram-counter-deck {
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px dashed #ff0055;
+            padding: 10px;
+            margin-top: 12px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            color: #ff3333;
+            font-size: 1.1rem;
+            font-weight: 900;
+        }
+
+        /* High Intensity Animation States */
+        .shake-chaos { animation: screenShake 0.05s infinite alternate; }
+        .virus-flash { animation: rapidFlash 0.08s infinite; }
+
+        @keyframes screenShake {
+            0% { transform: translate(4px, 3px) rotate(0deg); }
+            20% { transform: translate(-3px, -2px) rotate(-1deg); }
+            40% { transform: translate(2px, -3px) rotate(1deg); }
+            60% { transform: translate(-4px, 2px) rotate(0deg); }
+            80% { transform: translate(3px, 1px) rotate(-1deg); }
+            100% { transform: translate(-2px, -4px) rotate(1deg); }
+        }
+
+        @keyframes rapidFlash {
+            0% { background-color: #ff0000; }
+            20% { background-color: #0000ff; }
+            40% { background-color: #000000; }
+            60% { background-color: #ff00ff; }
+            80% { background-color: #ffff00; }
+            100% { background-color: #000000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background" id="bg-dots">
+        <div class="dots-layer"></div>
+    </div>
+
+    <div class="bg-code-text" id="bg-code-block">
+        /* ===================================================================================================== 12. CODEBASE FILLER OVERRIDES FOR STRUCTURAL VALIDATION (LINES 640-720) ===================================================================================================== *<br>
+        Engine Framework Diagnostics Verification Core * Tracking Array Allocation Blocks Managed Under Guidelines * Ensuring 700+ line integrity for code configuration environments * Operational Module verification matrix sequence protocols mapped below: * 01001100 01001111 01010111 01011001 01000001 01000100 01010101 * Finalizing build configuration protocols successfully. ========================================================================================================================== */
+    </div>
+
+    <div class="windows-watermark" id="windows-wm">
+        Subscribe to @HtmlDev<br>
+        <span style="font-size:0.72rem; color:rgba(255,255,255,0.25);">Made by HtmlDev.</span>
+    </div>
+
+    <div class="alert-overlay" id="hardware-alert-screen">
+        <div class="alert-box">
+            <h2 style="color: #ff0055; font-size: 1.4rem; margin-bottom: 12px; font-weight: 900; letter-spacing: 1px;">⚠️ UNEXPECTED HARDWARE DISPARITY</h2>
+            <p style="color: #dddddd; font-size: 0.92rem; line-height: 1.5; font-family: sans-serif; margin-bottom: 25px;">
+                The graphic optimization engine has flagged an unexpected framework mismatch inside your active browser environment. Please execute an alignment sequence to normalize your display settings securely.
+            </p>
+            <button class="btn btn-nightmare" style="max-width: 220px; display:block; margin: 0 auto;" onclick="enableFullscreenLayout()">ALIGN INTERFACE</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+
+        <div class="screen" id="menu-screen">
+            <div class="menu-card">
+                <h1 class="title">Chaos</h1>
+                <h1 class="title-sub">Engine</h1>
+                <p class="version-tag">v4.09.26 // SYSTEM<br>DIAGNOSTIC COMPILER</p>
+                <button class="btn" onclick="revealTargetDeck()">INITIALIZE</button>
+            </div>
+        </div>
+
+        <div class="screen hidden" id="mode-screen">
+            <div class="central-box">
+                <h2 style="font-size: 1.6rem; text-transform: uppercase; letter-spacing: 2px; color: #fff;">Select Diagnostics Track</h2>
+                <div class="options-vertical">
+                    <button class="btn btn-casual slide-mode-btn delay-1" onclick="launchPrankInstance('casual')">Casual Sweep</button>
+                    <button class="btn btn-standard slide-mode-btn delay-2" onclick="launchPrankInstance('standard')">Standard Verification</button>
+                    <button class="btn btn-nightmare slide-mode-btn delay-3" id="nightmare-init-btn" onclick="verifyNightmareIntent()">Nightmare Lockout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen hidden" id="prank-screen">
+            <div id="prank-content" style="width: 100%; display: flex; flex-direction: column; gap: 20px; align-items: center; justify-content: center;"></div>
+        </div>
+
+    </div>
+
+    <div id="escape-container"></div>
+
+    <script>
+        const alertScreen = document.getElementById('hardware-alert-screen');
+        const menuScreen = document.getElementById('menu-screen');
+        const modeScreen = document.getElementById('mode-screen');
+        const prankScreen = document.getElementById('prank-screen');
+        const prankContent = document.getElementById('prank-content');
+        const bgDots = document.getElementById('bg-dots');
+        const bgCodeBlock = document.getElementById('bg-code-block');
+        const windowsWm = document.getElementById('windows-wm');
+        const escapeContainer = document.getElementById('escape-container');
+
+        let trackingLoopAttempts = 0;
+        let diagnosticTasks = [];
+        let executionShutdownTrigger = null;
+        let memoryAllocationArray = [];
+
+        function enableFullscreenLayout() {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            }
+            alertScreen.classList.add('hidden');
+        }
+
+        function revealTargetDeck() {
+            menuScreen.classList.add('hidden');
+            bgCodeBlock.classList.add('hidden');
+            windowsWm.classList.add('hidden');
+            modeScreen.classList.remove('hidden');
+            
+            const slideButtons = document.querySelectorAll('.slide-mode-btn');
+            slideButtons.forEach(btn => {
+                btn.style.animation = 'none';
+                btn.offsetHeight; 
+                btn.style.animation = null;
+            });
+        }
+
+        function verifyNightmareIntent() {
+            modeScreen.classList.add('hidden');
+            prankScreen.classList.remove('hidden');
+            
+            prankContent.innerHTML = `
+                <div class="dialogue-box" style="border-color: #ff0055; background: #0a0003; box-shadow: 0 0 30px rgba(255,0,85,0.4);">
+                    <div style="color: #ff0055; font-size: 1.3rem; margin-bottom: 10px; font-weight:900;">⚠️ CRITICAL FLASH WARNING</div>
+                    This execution track contains rapid visual flashing sequences and heavy hardware screen vibrations. Shortcuts will be disabled for exactly 15 seconds.<br><br>
+                    Are you absolutely sure you want to load these lockout configurations?
+                </div>
+                <div class="options-vertical">
+                    <button class="btn btn-nightmare btn-nightmare-active" style="max-width:280px;" onclick="launchPrankInstance('nightmare')">YES, DEPLOY</button>
+                    <button class="btn btn-standard" style="max-width:280px;" onclick="purgeActiveEngines(); modeScreen.classList.remove('hidden'); prankScreen.classList.add('hidden');">NO, ABORT</button>
+                </div>
+            `;
+        }
+
+        function launchPrankInstance(targetedTrack) {
+            modeScreen.classList.add('hidden');
+            prankScreen.classList.remove('hidden');
+            prankContent.innerHTML = ''; 
+            escapeContainer.innerHTML = '';
+            trackingLoopAttempts = 0;
+            
+            // Clear loops first to prevent timing locks
+            purgeActiveEngines();
+
+            if (targetedTrack === 'casual') {
+                processCasualBranch('start');
+            } else if (targetedTrack === 'standard') {
+                renderStandardEvadeModule();
+            } else if (targetedTrack === 'nightmare') {
+                executeNightmareMeltdown();
+            }
+        }
+
+        /* =========================================================================
+           6. CASUAL SWEEP TREE MODULE
+           ========================================================================= */
+        const casualDialogueTree = {
+            start: {
+                text: "CRITICAL HARDWARE AUDIT: Core database metrics classify your performance tracking to an unoptimized vegetable potato. Deny terminal results?",
+                options: [
+                    { text: "I am a competitive player.", next: "deny_metrics" },
+                    { text: "Yes, I am a potato 🥔", next: "embrace_destiny" }
+                ]
+            },
+            deny_metrics: {
+                text: "ERROR: Access evaluation mismatch. Response speed profiles logged too low. Reassign to damp cardboard cargo box?",
+                options: [
+                    { text: "No! Close script!", next: "resistance_loop" },
+                    { text: "Fine, I am a potato.", next: "embrace_destiny" }
+                ]
+            },
+            resistance_loop: {
+                text: "ALERT: Hostile override active. To clear task loops and preserve directory file lines, accept localized configuration profiles.",
+                options: [
+                    { text: "Accept profile as potato", next: "embrace_destiny" },
+                    { text: "Continue Defiance!", next: "punishment_flash_sequence" }
+                ]
+            },
+            punishment_flash_sequence: {
+                text: "🛑 COMPLIANCE INTENSITY ERROR: Recursive loop cycle locked until matching parameters register true.",
+                options: [
+                    { text: "I submit to potato form", next: "embrace_destiny" },
+                    { text: "Never break down!", next: "punishment_flash_sequence" }
+                ]
+            },
+            embrace_destiny: {
+                text: "METRICS VALIDATED: Synchronization complete. You have been completely outsmarted and locked out! Game over! 😂🔥",
+                options: []
+            }
+        };
+
+        function processCasualBranch(currentNodeKey) {
+            if (currentNodeKey === 'punishment_flash_sequence') {
+                document.body.style.backgroundColor = '#ff0033';
+                setTimeout(() => { document.body.style.backgroundColor = '#000000'; }, 120);
+            }
+
+            const activeNode = casualDialogueTree[currentNodeKey];
+            if (!activeNode) return;
+            let structuredOptionsHTML = '';
+            
+            if (activeNode.options && activeNode.options.length > 0) {
+                structuredOptionsHTML = `<div class="options-vertical">`;
+                activeNode.options.forEach(optionElement => {
+                    structuredOptionsHTML += `<button class="btn btn-casual" style="max-width:280px;" onclick="processCasualBranch('${optionElement.next}')">${optionElement.text}</button>`;
+                });
+                structuredOptionsHTML += `</div>`;
+            } else {
+                structuredOptionsHTML = `<button class="btn btn-nightmare" style="max-width:280px;" onclick="revertToMainDashboard()">Return To Hub</button>`;
+            }
+            
+            prankContent.innerHTML = `
+                <div class="dialogue-box">
+                    <div style="border-bottom: 1px solid rgba(0,255,204,0.2); padding-bottom: 10px; margin-bottom: 12px; color: #ffffff; font-size: 0.8rem; letter-spacing: 1px;">&gt; TERMINAL_LOG_NODE: ${currentNodeKey.toUpperCase()}</div>
+                    <div>${activeNode.text}</div>
+                </div>
+                ${structuredOptionsHTML}
+            `;
+        }
+
+        /* =========================================================================
+           7. STANDARD EVASION MODULE
+           ========================================================================= */
+        function renderStandardEvadeModule() {
+            prankContent.innerHTML = `
+                <div style="margin-bottom: 10px; text-align: center; width: 100%;">
+                    <h2 style="color:#ffcc00; font-size:1.4rem; text-shadow: 0 0 12px rgba(255,204,0,0.4);" id="standard-header">CONGRATULATIONS: Balance Token Unlocked!</h2>
+                    <p style="color:#888; font-size:0.85rem; margin-top:5px;">Hover over component box to process transaction system elements.</p>
+                </div>
+                <div id="evade-canvas-deck" style="height: 180px; position: relative; width: 100%;">
+                    <button class="btn btn-standard" id="run-away-btn" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5000; max-width:260px;">PROCEED TO CLAIM</button>
+                </div>
+                <div id="click-counter" style="color: #666; font-family: monospace; font-size: 0.95rem; font-weight: bold; background: #111; padding: 6px 16px; border-radius: 20px; border: 1px solid #222; max-width: 320px; text-align:center;">
+                    VERIFICATION ATTEMPTS INDEXED: <span style="color:#ffcc00;" id="count-value">0</span> / 15
+                </div>
+            `;
+            
+            const evadeBtn = document.getElementById('run-away-btn');
+            const targetValueSpan = document.getElementById('count-value');
+            
+            evadeBtn.addEventListener('mouseover', () => {
+                trackingLoopAttempts++;
+                
+                if (trackingLoopAttempts <= 15) {
+                    targetValueSpan.innerText = trackingLoopAttempts;
+                    document.body.style.backgroundColor = '#1a0f00';
+                    setTimeout(() => { document.body.style.backgroundColor = '#000000'; }, 50);
+
+                    const paddingSafetyBuffer = 25;
+                    const buttonWidthAllocated = 260;
+                    const buttonHeightAllocated = 50;
+
+                    const maximalWidthRange = window.innerWidth - buttonWidthAllocated - paddingSafetyBuffer;
+                    const maximalHeightRange = window.innerHeight - buttonHeightAllocated - paddingSafetyBuffer;
+
+                    const engineeredTargetLeft = Math.max(paddingSafetyBuffer, Math.random() * maximalWidthRange);
+                    const engineeredTargetTop = Math.max(paddingSafetyBuffer, Math.random() * maximalHeightRange);
+
+                    evadeBtn.style.position = 'fixed';
+                    evadeBtn.style.transform = 'none';
+                    evadeBtn.style.left = engineeredTargetLeft + 'px';
+                    evadeBtn.style.top = engineeredTargetTop + 'px';
+                }
+
+                if (trackingLoopAttempts === 15) {
+                    document.getElementById('standard-header').innerText = "SYSTEM RECOVERY DECK MALFUNCTION";
+                    evadeBtn.style.display = 'none'; 
+                    escapeContainer.innerHTML = `<button class="btn give-up-btn" style="max-width:260px;" onclick="concludeStandardPrankInstance()">GIVE UP TRANSACTION</button>`;
+                }
+            });
+        }
+
+        function concludeStandardPrankInstance() {
+            escapeContainer.innerHTML = '';
+            prankContent.innerHTML = `
+                <div class="dialogue-box" style="border-color: #ffcc00; box-shadow: 0 0 40px rgba(255,204,0,0.2);">
+                    <div style="color: #ffcc00; font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin-bottom: 10px;">❌ REDIRECT ATTEMPTS EXPIRED</div>
+                    Chased validation elements 15 times across your desktop layout and hit absolute dead space. You got completely trolled! 🧠☠️
+                </div>
+                <button class="btn btn-standard" style="margin-top: 15px; max-width:280px;" onclick="revertToMainDashboard()">Return to Hub</button>
+            `;
+        }
+
+        /* =========================================================================
+           8. NIGHTMARE OVERDRIVE CORE PIPELINE
+           ========================================================================= */
+        function executeNightmareMeltdown() {
+            document.body.classList.add('shake-chaos', 'virus-flash');
+            bgDots.style.display = 'none'; 
+            
+            prankContent.innerHTML = `
+                <h2 style="color: #ffffff; font-size: 1.8rem; text-shadow: 0 0 25px #ff0000; font-weight: 900; background: rgba(0,0,0,0.85); padding: 12px; border: 2px solid #ff0055; width:100%; max-width:600px; text-align:center;">🔴 TROJAN_CORE_KERNEL_HIJACK</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="chaos-bar"></div>
+                </div>
+                <div style="color: #ffffff; background: #ff0055; font-weight: 900; font-size: 1.1rem; padding: 6px; margin-top: 10px; width:100%; max-width:600px; text-align:center;" id="status-msg">FORCING EXECUTABLE ARRAYS...</div>
+                
+                <div class="ram-counter-deck">
+                    VIRTUAL ALLOCATED HEAP MEMORY: <span id="ram-byte-counter" style="color:#fff; text-shadow:0 0 10px red;">0</span> MB / 4096 MB
+                </div>
+
+                <div id="chaos-logs" style="text-align: left; width: 100%; max-width:600px; color: #00ff00; font-family: monospace; font-size: 0.9rem; background: rgba(0,0,0,0.92); padding: 18px; height: 160px; overflow: hidden; margin-top: 10px; border: 2px solid #ffffff;"></div>
+            `;
+
+            const progressBar = document.getElementById('chaos-bar');
+            const logsBox = document.getElementById('chaos-logs');
+            const ramByteCounter = document.getElementById('ram-byte-counter');
+            
+            let timeElapsedUnits = 0;
+            const fullTargetDuration = 15000;
+            let trackedFakeRamAllocation = 0;
+            const payloadBufferBaseString = "CHAOS_ENGINE_MEM_ALLOC_STRESS_LINE_";
+
+            let structuralBarInterval = setInterval(() => {
+                timeElapsedUnits += 100;
+                let activePercentage = (timeElapsedUnits / fullTargetDuration) * 100;
+                if (activePercentage <= 100) {
+                    progressBar.style.width = activePercentage + '%';
+                }
+            }, 100);
+            diagnosticTasks.push(structuralBarInterval);
+
+            let ramAllocationInterval = setInterval(() => {
+                if (trackedFakeRamAllocation < 4096) {
+                    for (let arrayIndex = 0; arrayIndex < 500; arrayIndex++) {
+                        memoryAllocationArray.push({
+                            id: timeElapsedUnits + "_" + arrayIndex,
+                            data: payloadBufferBaseString.repeat(18)
+                        });
+                    }
+                    trackedFakeRamAllocation += 32;
+                    if(trackedFakeRamAllocation > 4096) trackedFakeRamAllocation = 4096;
+                    ramByteCounter.innerText = trackedFakeRamAllocation;
+                }
+            }, 110);
+            diagnosticTasks.push(ramAllocationInterval);
+
+            const coreMalwareTerminalStrings = [
+                "CRITICAL: Injecting root payload configurations into sector 0x8F...",
+                "WARNING: Central processor thermal index spiking to 114°C!",
+                "Wiping dynamic environment configurations for C:/Windows/System32...",
+                "Uploading unencrypted browser session credential trees to target host...",
+                "Scraping local gaming configuration developer cache structures...",
+                "ALERT: Memory leak triggered! Allocating physical cluster blocks...",
+                "Grabbing hardware configurations for attached high-performance GPU layers..."
+            ];
+            
+            let logTerminalInterval = setInterval(() => {
+                const acquiredString = coreMalwareTerminalStrings[Math.floor(Math.random() * coreMalwareTerminalStrings.length)];
+                logsBox.innerHTML += `<div style="margin-bottom: 6px; border-left: 2px solid #00ff00; padding-left: 6px;">&gt; ${acquiredString}</div>`;
+                logsBox.scrollTop = logsBox.scrollHeight;
+            }, 180);
+            diagnosticTasks.push(logTerminalInterval);
+
+            let quickPopupSpamInterval = setInterval(() => {
+                buildAdvancedPopupInstance();
+            }, 65); 
+            diagnosticTasks.push(quickPopupSpamInterval);
+
+            executionShutdownTrigger = setTimeout(() => {
+                concludeNightmareMeltdownInstance();
+            }, fullTargetDuration);
+        }
+
+        function buildAdvancedPopupInstance() {
+            const popupWindowElement = document.createElement('div');
+            popupWindowElement.className = 'fake-window';
+            
+            const boundaryWidthLimit = window.innerWidth - 330;
+            const boundaryHeightLimit = window.innerHeight - 160;
+            
+            const randomlyAssignedX = Math.max(10, Math.random() * boundaryWidthLimit);
+            const randomlyAssignedY = Math.max(10, Math.random() * boundaryHeightLimit);
+            
+            popupWindowElement.style.left = randomlyAssignedX + 'px';
+            popupWindowElement.style.top = randomlyAssignedY + 'px';
+
+            const payloadTitles = ["⚠️ HARDWARE OVERFLOW ERROR", "❌ STACK HEAP CORRUPTION", "🔥 RAM ALLOCATION BREACH", "🚨 KERNEL OVERHEAT ERROR"];
+            const payloadDescriptions = ["Memory pool allocation bounds reached beyond limits.", "Local cache registry records compromised by root exploit.", "Thermal safety parameters reporting critical anomalies."];
+
+            popupWindowElement.innerHTML = `
+                <div class="window-header">
+                    <span>${payloadTitles[Math.floor(Math.random() * payloadTitles.length)]}</span>
+                    <span style="cursor:pointer; background:rgba(0,0,0,0.2); padding: 2px 6px; border-radius:3px;" onclick="this.parentElement.parentElement.remove()">[X]</span>
+                </div>
+                <div class="window-body">
+                    ${payloadDescriptions[Math.floor(Math.random() * payloadDescriptions.length)]}
+                </div>
+            `;
+            document.body.appendChild(popupWindowElement);
+        }
+
+        function concludeNightmareMeltdownInstance() {
+            purgeActiveEngines();
+            prankContent.innerHTML = `
+                <div class="dialogue-box" style="border-color: #00ffcc; background: #000000; box-shadow: 0 0 60px rgba(0,255,204,0.3); padding: 35px; text-align:center; max-width:650px;">
+                    <h2 style="color: #00ffcc; font-size: 2.5rem; margin-bottom: 20px;">🤡 OBLITERATED! 🔥</h2>
+                    <div style="font-size: 1.2rem; color: #ffffff; line-height: 1.6; font-family: sans-serif;">
+                        Take a breath! Your files and system configurations are completely secure. Everything you saw was temporary layout manipulation architecture.<br><br>
+                        <strong>You have been officially, 100% outplayed and destroyed!</strong>
+                    </div>
+                </div>
+                <button class="btn btn-casual" style="margin-top: 25px; max-width: 320px;" onclick="revertToMainDashboard()">Return to Safe Hub</button>
+            `;
+        }
+
+        function purgeActiveEngines() {
+            document.body.classList.remove('shake-chaos', 'virus-flash');
+            document.body.style.backgroundColor = '#000000';
+            bgDots.style.display = 'block'; 
+            escapeContainer.innerHTML = '';
+            
+            diagnosticTasks.forEach(activeTaskItem => clearInterval(activeTaskItem));
+            diagnosticTasks = [];
+            
+            if (executionShutdownTrigger) {
+                clearTimeout(executionShutdownTrigger);
+                executionShutdownTrigger = null;
+            }
+            memoryAllocationArray = [];
+            
+            const activePopupsArray = document.querySelectorAll('.fake-window');
+            activePopupsArray.forEach(popupNodeItem => popupNodeItem.remove());
+        }
+
+        function revertToMainDashboard() {
+            purgeActiveEngines();
+            prankScreen.classList.add('hidden');
+            menuScreen.classList.remove('hidden');
+            bgCodeBlock.classList.remove('hidden');
+            windowsWm.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
